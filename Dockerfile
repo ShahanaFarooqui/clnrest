@@ -7,12 +7,12 @@ COPY . /clnrest
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt && \
     pip install pyinstaller && \
-    pyinstaller --onefile cln_rest.py && \
-    pyinstaller --onefile clnrest.py
+    pyinstaller --onefile --distpath ./release cln_rest.py && \
+    pyinstaller --onefile --distpath ./release clnrest.py
 
 FROM scratch AS export-stage
 
-COPY --from=build /clnrest/dist/cln_rest /release/cln_rest
-COPY --from=build /clnrest/dist/clnrest /release/clnrest
+COPY --from=build /clnrest/release/cln_rest /release/cln_rest
+COPY --from=build /clnrest/release/clnrest /release/clnrest
 
 ENTRYPOINT ["/clnrest"]

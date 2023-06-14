@@ -11,8 +11,8 @@ from .generate_certs import generate_certs
 
 def create_app():
     authorizations = {
-        "rune": {"type": "apiKey","in": "header","name": "rune"},
-        "nodeid": {"type": "apiKey","in": "header","name": "nodeid"}
+        "rune": {"type": "apiKey","in": "header","name": "Rune"},
+        "nodeid": {"type": "apiKey","in": "header","name": "Nodeid"}
     }
     app = Flask(__name__)
     api = Api(app, version="1.0", title="Core Lightning Rest", description="Core Lightning REST API Swagger", authorizations=authorizations, security=["rune", "nodeid"])

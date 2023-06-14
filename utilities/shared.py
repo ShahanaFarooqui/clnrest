@@ -13,7 +13,9 @@ logger = logging.getLogger("")
 caller = ""
 
 def log(self, msg, level, *args, **kwargs):
-    self._log(logging.getLevelName(level.upper()), msg, args, **kwargs)
+    level_num = logging.getLevelName(level.upper())
+    if self.isEnabledFor(level_num):
+        self._log(level_num, msg, args, *kwargs)
 
 def configure_logger():
     global logger
