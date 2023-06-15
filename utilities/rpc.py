@@ -1,6 +1,7 @@
 import socket
 from flask import request, make_response
 from flask_restx import Resource, Namespace
+import json
 import json5
 from .shared import call_rpc_method
 from .auth import rune_auth
@@ -12,6 +13,7 @@ rpcns = Namespace("RPCs")
 payload_model = rpcns.model("Payload", {}, None, False)
 
 def process_help_response(help_response):
+    # json5.loads due to single quotes in response
     processed_res = json5.loads(str(help_response))["help"]
     line = "\n---------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n\n"
     processed_html_res = ""

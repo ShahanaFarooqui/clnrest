@@ -27,6 +27,7 @@ def set_application_options():
         options = {
             "bind": f"{REST_HOST}:{REST_PORT}",
             "workers": 1,
+            "timeout": 60,
         }
     else:
         cert_file = Path(f"{CERTS_PATH}/client.pem")
@@ -42,6 +43,7 @@ def set_application_options():
         options = {
             "bind": f"{REST_HOST}:{REST_PORT}",
             "workers": 1,
+            "timeout": 60,
             "certfile": f"{CERTS_PATH}/client.pem",
             "keyfile": f"{CERTS_PATH}/client-key.pem",
         }

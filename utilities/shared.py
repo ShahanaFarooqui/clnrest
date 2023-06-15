@@ -33,7 +33,7 @@ def configure_logger():
 def read_config_from_json(file_path):
     try:
         with open(f"{file_path}/rest-config.json", "r") as f:
-            return json5.load(f)
+            return json.load(f)
     
     except Exception as err:
         raise Exception(f"Error from config file ({file_path}/rest-config.json): {err}")
@@ -91,7 +91,14 @@ def call_rpc_method(rpc_method, payload):
         if isinstance(caller, str):
             method_req = { "jsonrpc": "2.0", "id": "rest:" + rpc_method + "#" + str(random.randint(100000, 999999)), "method": rpc_method, "params": payload }
             cln_socket.sendall(json.dumps(method_req).encode())
-            response = cln_socket.recv(1048576).decode()
+            # response = cln_socket.recv(1048576).decode()
+            response = b""
+            while True:
+                chunk = cln_socket.recv(1048576)
+                response += chunk
+                if b'\n\n' in chunk:
+                    break
+            response = response.decode()
         else:
             response = caller.rpc.call(rpc_method, payload)
 
@@ -100,7 +107,8 @@ def call_rpc_method(rpc_method, payload):
         else:
             logger.log(f"{response}", "info")
             if '"result":' in str(response).lower():
-                return json5.loads(response)["result"]
+                # Use json5.loads ONLY when necessary, as it increases processing time significantly
+                return json.loads(response)["result"]
             else:
                 return response
 
