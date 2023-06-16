@@ -6,9 +6,8 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.serialization import Encoding
 import datetime
-from .shared import logger
 
-def generate_certs(certs_path):
+def generate_certs(plugin, certs_path):
     # Generate key
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     # Create the certs directory if it does not exist
@@ -33,5 +32,5 @@ def generate_certs(certs_path):
     )
     with open(os.path.join(certs_path, "client.pem"), "wb") as f:
         f.write(cert.public_bytes(Encoding.PEM))
-    logger.log(f"Certificate Generated!", "info")
+    plugin.log(f"Certificate Generated!", "info")
 
