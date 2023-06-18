@@ -2,6 +2,15 @@ import json5
 import re
 import json
 
+CERTS_PATH, REST_PROTOCOL, REST_HOST, REST_PORT = "", "", "", ""
+
+def set_config(options):
+    global CERTS_PATH, REST_PROTOCOL, REST_HOST, REST_PORT
+    CERTS_PATH = str(options["rest_certs_path"])
+    REST_PROTOCOL = str(options["rest_protocol"])
+    REST_HOST = str(options["rest_host"])
+    REST_PORT = int(options["rest_port"])
+
 def call_rpc_method(plugin, rpc_method, payload):
     try:
         response = plugin.rpc.call(rpc_method, payload)
