@@ -5,15 +5,14 @@ from gunicorn.workers import sync
 
 import os
 import json5
-import re
-import json
 from pathlib import Path
 from flask import Flask, request, make_response
 from flask_restx import Api, Namespace, Resource
 from gunicorn.app.base import BaseApplication
 from pyln.client import Plugin
 from multiprocessing import Process
-from generate_certs import generate_certs
+from utilities.generate_certs import generate_certs
+from utilities.shared import call_rpc_method, verify_rune, process_help_response
 
 CERTS_PATH, REST_PROTOCOL, REST_HOST, REST_PORT = "", "", "", ""
 plugin = Plugin()
@@ -28,60 +27,15 @@ methods_list = []
 rpcns = Namespace("RPCs")
 payload_model = rpcns.model("Payload", {}, None, False)
 
-def call_rpc_method(rpc_method, payload):
-    try:
-        response = plugin.rpc.call(rpc_method, payload)
-        if '"error":' in str(response).lower():
-            raise Exception(response)
-        else:
-            plugin.log(f"{response}", "info")
-            if '"result":' in str(response).lower():
-                # Use json5.loads ONLY when necessary, as it increases processing time significantly
-                return json.loads(response)["result"]
-            else:
-                return response
-
-    except Exception as err:
-        plugin.log(f"Error: {err}", "error")
-        if "error" in str(err).lower():
-            match_err_obj = re.search(r'"error":\{.*?\}', str(err))
-            if match_err_obj is not None:
-                err = "{" + match_err_obj.group() + "}"
-            else:
-                match_err_str = re.search(r"error: \{.*?\}", str(err))
-                if match_err_str is not None:
-                    err = "{" + match_err_str.group() + "}"
-        raise Exception(err)
-
-def verify_rune(request):
-    rune = request.headers.get("rune", None)
-    nodeid = request.headers.get("nodeid", None)
-
-    if nodeid is None:
-        raise Exception('{ "error": {"code": 403, "message": "Not authorized: Missing nodeid"} }')
-
-    if rune is None:
-        raise Exception('{ "error": {"code": 403, "message": "Not authorized: Missing rune"} }')
-
-    if request.is_json:
-        rpc_params = request.get_json()
-    else:
-        rpc_params = request.form.to_dict()
-
-    return call_rpc_method("commando-checkrune", [nodeid, rune, request.view_args["rpc_method"], rpc_params])
-
-def process_help_response(help_response):
-    # Use json5.loads due to single quotes in response
-    processed_res = json5.loads(str(help_response))["help"]
-    line = "\n---------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n\n"
-    processed_html_res = ""
-    for row in processed_res:
-        processed_html_res += f"Command: {row['command']}\n"
-        processed_html_res += f"Category: {row['category']}\n"
-        processed_html_res += f"Description: {row['description']}\n"
-        processed_html_res += f"Verbose: {row['verbose']}\n"
-        processed_html_res += line
-    return processed_html_res
+def create_app():
+    app = Flask(__name__)
+    authorizations = {
+        "rune": {"type": "apiKey","in": "header","name": "Rune"},
+        "nodeid": {"type": "apiKey","in": "header","name": "Nodeid"}
+    }
+    api = Api(app, version="1.0", title="Core Lightning Rest", description="Core Lightning REST API Swagger", authorizations=authorizations, security=["rune", "nodeid"])
+    api.add_namespace(rpcns, path="/v1")
+    return app
 
 @rpcns.route("/list-methods")
 class ListMethodsResource(Resource):
@@ -90,7 +44,7 @@ class ListMethodsResource(Resource):
     def get(self):
         """Get the list of all valid rpc methods"""
         try:
-            help_response = call_rpc_method("help", [])
+            help_response = call_rpc_method(plugin, "help", [])
             html_content = process_help_response(help_response)
             response = make_response(html_content)
             response.headers["Content-Type"] = "text/html"
@@ -98,7 +52,6 @@ class ListMethodsResource(Resource):
 
         except Exception as err:
             plugin.log(f"Error: {err}", "error")
-            print(f"Error: {err}", "error")
             return json5.loads(str(err)), 500
 
 @rpcns.route("/<rpc_method>")
@@ -111,7 +64,7 @@ class RpcMethodResource(Resource):
     def post(self, rpc_method):
         """Call any valid core lightning method (check list-methods response)"""
         try:
-            is_valid_rune = verify_rune(request)
+            is_valid_rune = verify_rune(plugin, request)
             
             if "error" in is_valid_rune:
                 plugin.log(f"Error: {is_valid_rune}", "error")
@@ -127,11 +80,10 @@ class RpcMethodResource(Resource):
                 payload = request.get_json()
             else:
                 payload = request.form.to_dict()
-            return call_rpc_method(rpc_method, payload), 201
+            return call_rpc_method(plugin, rpc_method, payload), 201
 
         except Exception as err:
             plugin.log(f"Error: {err}", "error")
-            print(f"Error: {err}", "error")
             return json5.loads(str(err)), 500
 
 def set_config(options):
@@ -140,16 +92,6 @@ def set_config(options):
     REST_PROTOCOL = str(options["rest_protocol"])
     REST_HOST = str(options["rest_host"])
     REST_PORT = int(options["rest_port"])
-
-def create_app():
-    authorizations = {
-        "rune": {"type": "apiKey","in": "header","name": "Rune"},
-        "nodeid": {"type": "apiKey","in": "header","name": "Nodeid"}
-    }
-    app = Flask(__name__)
-    api = Api(app, version="1.0", title="Core Lightning Rest", description="Core Lightning REST API Swagger", authorizations=authorizations, security=["rune", "nodeid"])
-    api.add_namespace(rpcns, path="/v1")
-    return app
 
 def set_application_options(plugin):
     plugin.log(f"Server is starting at {REST_PROTOCOL}://{REST_HOST}:{REST_PORT}", "info")
@@ -195,8 +137,8 @@ class CLNRestApplication(BaseApplication):
         return self.application
     
 def worker():
-    app = create_app()
     options = set_application_options(plugin)
+    app = create_app()
     CLNRestApplication(app, options).run()
 
 def start_server(REST_PORT):
