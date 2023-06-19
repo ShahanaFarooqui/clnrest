@@ -7,7 +7,7 @@ from pathlib import Path
 from flask import Flask
 from flask_restx import Api
 from gunicorn.app.base import BaseApplication
-from multiprocessing import Process
+from multiprocessing import Process, cpu_count
 from utilities.generate_certs import generate_certs
 from utilities.shared import set_config
 from utilities.rpc_routes import rpcns
@@ -31,7 +31,7 @@ def set_application_options(plugin):
     if REST_PROTOCOL == "http":
         options = {
             "bind": f"{REST_HOST}:{REST_PORT}",
-            "workers": 1,
+            "workers": cpu_count(),
             "timeout": 60,
         }
     else:
@@ -46,7 +46,7 @@ def set_application_options(plugin):
             raise Exception(f"{err}: Certificates do not exist at {CERTS_PATH}")
         options = {
             "bind": f"{REST_HOST}:{REST_PORT}",
-            "workers": 1,
+            "workers": cpu_count(),
             "timeout": 60,
             "certfile": f"{CERTS_PATH}/client.pem",
             "keyfile": f"{CERTS_PATH}/client-key.pem",
