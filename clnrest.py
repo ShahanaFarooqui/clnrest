@@ -27,27 +27,29 @@ def create_app():
 
 def set_application_options(plugin):
     from utilities.shared import CERTS_PATH, REST_PROTOCOL, REST_HOST, REST_PORT
-    plugin.log(f"Server is starting at {REST_PROTOCOL}://{REST_HOST}:{REST_PORT}", "info")
+    plugin.log(f"REST Server is starting at {REST_PROTOCOL}://{REST_HOST}:{REST_PORT}", "debug")
     if REST_PROTOCOL == "http":
         options = {
             "bind": f"{REST_HOST}:{REST_PORT}",
             "workers": cpu_count(),
             "timeout": 60,
+            "loglevel": "warning",
         }
     else:
         cert_file = Path(f"{CERTS_PATH}/client.pem")
         key_file = Path(f"{CERTS_PATH}/client-key.pem")
         if not cert_file.is_file() or not key_file.is_file():
-            plugin.log(f"Certificate not found at {CERTS_PATH}. Generating a new certificate!", "info")
+            plugin.log(f"Certificate not found at {CERTS_PATH}. Generating a new certificate!", "debug")
             generate_certs(plugin, CERTS_PATH)
         try:
-            plugin.log(f"Certs Path: {CERTS_PATH}", "info")
+            plugin.log(f"Certs Path: {CERTS_PATH}", "debug")
         except Exception as err:
             raise Exception(f"{err}: Certificates do not exist at {CERTS_PATH}")
         options = {
             "bind": f"{REST_HOST}:{REST_PORT}",
             "workers": cpu_count(),
             "timeout": 60,
+            "loglevel": "warning",
             "certfile": f"{CERTS_PATH}/client.pem",
             "keyfile": f"{CERTS_PATH}/client-key.pem",
         }
@@ -55,8 +57,10 @@ def set_application_options(plugin):
 
 class CLNRestApplication(BaseApplication):
     def __init__(self, app, options=None):
+        from utilities.shared import REST_PROTOCOL, REST_HOST, REST_PORT
         self.application = app
         self.options = options or {}
+        plugin.log(f"REST server running at {REST_PROTOCOL}://{REST_HOST}:{REST_PORT}", "info")
         super().__init__()
 
     def load_config(self):
