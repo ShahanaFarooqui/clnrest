@@ -60,8 +60,12 @@ class RpcMethodResource(Resource):
 @rpcns.route("/notifications")
 class NotificationsResource(Resource):
     def get(self):
-        def notifications_stream():
-            while True:
-                from .rpc_plugin import queue
-                yield queue.get()
-        return Response(stream_with_context(notifications_stream()), mimetype="text/event-stream")
+        try:
+            def notifications_stream():
+                while True:
+                    from .rpc_plugin import queue
+                    yield queue.get()
+            return Response(stream_with_context(notifications_stream()), mimetype="text/event-stream")
+
+        except Exception as err:        
+            return json5.loads(str(err)), 500
