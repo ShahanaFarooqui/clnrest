@@ -8,10 +8,10 @@ Install required packages with `pip install json5 flask flask_restx gunicorn pyl
 
 ## Configuration
 
-- --rest_protocol: Specifies the REST server protocol. Default is HTTPS.
-- --rest_host: Defines the REST server host. Default is 127.0.0.1.
-- --rest_port: Sets the REST server port to listen to. Default is 3010.
-- --rest_certs_path: Defines the path for HTTPS cert & key. Default path is same as RPC file path to utilize gRPC's client certificate. If it is missing at the configured location, new identity (`client.pem` and `client-key.pem`) will be generated.
+- --rest-protocol: Specifies the REST server protocol. Default is HTTPS.
+- --rest-host: Defines the REST server host. Default is 127.0.0.1.
+- --rest-port: Sets the REST server port to listen to. Default is 3010.
+- --rest-certs: Defines the path for HTTPS cert & key. Default path is same as RPC file path to utilize gRPC's client certificate. If it is missing at the configured location, new identity (`client.pem` and `client-key.pem`) will be generated.
 
 ## Plugin
 
