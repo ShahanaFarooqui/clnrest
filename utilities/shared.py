@@ -17,7 +17,7 @@ def call_rpc_method(plugin, rpc_method, payload):
         if '"error":' in str(response).lower():
             raise Exception(response)
         else:
-            plugin.log(f"{response}", "info")
+            plugin.log(f"{response}", "debug")
             if '"result":' in str(response).lower():
                 # Use json5.loads ONLY when necessary, as it increases processing time significantly
                 return json.loads(response)["result"]
