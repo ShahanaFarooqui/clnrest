@@ -33,4 +33,3 @@ def generate_certs(plugin, certs_path):
     with open(os.path.join(certs_path, "client.pem"), "wb") as f:
         f.write(cert.public_bytes(Encoding.PEM))
     plugin.log(f"Certificate Generated!", "debug")
-

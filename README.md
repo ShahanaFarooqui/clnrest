@@ -21,6 +21,16 @@ Install required packages with `pip install json5 flask flask_restx gunicorn pyl
 
 With the default configurations, the Swagger user interface will be available at https://127.0.0.1:3010/. The POST method requires `rune` and `nodeid` headers for authorization.
 
+### cURL
+Example curl command for GET:
+    `curl -k https://127.0.0.1:3010/v1/notifications`
+
+Example curl command for POST will also require `rune` and `nodeid` headers like below:
+    `curl -k -X POST 'https://127.0.0.1:3010/v1/getinfo' -H 'Rune: <node-rune>' -H 'Nodeid: <node-id>'`
+
+With `-k` or `--insecure` option curl proceeds with the connection even if the SSL certificate cannot be verified.
+This option should be used only when testing with self signed certificate.
+
 ### Swagger
 <p float="left">
     <img src="./.github/screenshots/Swagger.png" width="200" alt="Swagger Dashboard" />
